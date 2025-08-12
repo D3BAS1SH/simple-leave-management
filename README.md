@@ -14,6 +14,7 @@ A Node.js/Express.js RESTful API for managing employee leave requests with compr
 - ✅ Leave balance management
 - ✅ Leave approval/rejection by HR
 - ✅ Paginated leave listings
+- ✅ **Rate limiting middleware** (IP-based protection)
 - ✅ Error handling middleware
 - ✅ Security middleware (Helmet, CORS)
 - ✅ TypeScript support
@@ -38,7 +39,8 @@ simple-leave-management/
 │   │   ├── employee.controller.ts    # Employee management logic
 │   │   └── leave.controller.ts       # Leave management logic
 │   ├── middleware/
-│   │   └── errorHandler.middleware.ts # Global error handling
+│   │   ├── errorHandler.middleware.ts # Global error handling
+│   │   └── rateLimiter.middleware.ts  # Rate limiting configurations
 │   ├── models/
 │   │   ├── employee.model.ts         # Employee data schema
 │   │   └── leave.model.ts            # Leave request schema
@@ -106,6 +108,7 @@ simple-leave-management/
 
 #### Create Employee
 - **POST** `/api/v1/employees/create`
+- **Rate Limit:** 5 requests per 15 minutes (Strict)
 - **Body:**
   ```json
   {
@@ -122,6 +125,7 @@ simple-leave-management/
 
 #### Apply for Leave
 - **POST** `/api/v1/leaves/apply-leave`
+- **Rate Limit:** 10 requests per 1 hour (Leave-specific)
 - **Body:**
   ```json
   {
@@ -135,14 +139,17 @@ simple-leave-management/
 
 #### Get All Leaves (HR)
 - **GET** `/api/v1/leaves?page=1&limit=10`
+- **Rate Limit:** 200 requests per 15 minutes (Read operations)
 - **Response:** Paginated list of all leave requests
 
 #### Get Pending Leaves (HR)
 - **GET** `/api/v1/leaves/pending?page=1&limit=10`
+- **Rate Limit:** 200 requests per 15 minutes (Read operations)
 - **Response:** Paginated list of pending leave requests
 
 #### Update Leave Status (HR)
 - **PATCH** `/api/v1/leaves/:id`
+- **Rate Limit:** 5 requests per 15 minutes (Strict)
 - **Body:**
   ```json
   {
@@ -201,13 +208,51 @@ The API implements comprehensive error handling with:
 - Input validation errors (400 Bad Request)
 - Resource not found errors (404 Not Found)
 - Conflict errors for duplicates (409 Conflict)
+- Rate limiting errors (429 Too Many Requests)
 - Server errors (500 Internal Server Error)
 - Custom error messages for better debugging
+
+## Rate Limiting Strategy
+
+The application implements a multi-tier rate limiting approach:
+
+### 1. **General Rate Limiter** (Global)
+- **Limit:** 100 requests per 15 minutes per IP
+- **Scope:** All API endpoints (except health checks)
+- **Purpose:** Prevents general API abuse
+
+### 2. **Read Operations Rate Limiter**
+- **Limit:** 200 requests per 15 minutes per IP
+- **Applied to:** GET endpoints (viewing leaves)
+- **Purpose:** More lenient limits for data retrieval
+
+### 3. **Leave Application Rate Limiter**
+- **Limit:** 10 requests per 1 hour per IP
+- **Applied to:** POST `/api/v1/leaves/apply-leave`
+- **Purpose:** Prevents spam leave applications
+
+### 4. **Strict Rate Limiter** (Sensitive Operations)
+- **Limit:** 5 requests per 15 minutes per IP
+- **Applied to:** 
+  - Employee creation
+  - Leave status updates (approve/reject)
+- **Purpose:** Maximum protection for critical operations
+
+### Rate Limit Headers
+All rate-limited responses include standard headers:
+- `RateLimit-Limit`: Request limit per time window
+- `RateLimit-Remaining`: Requests remaining in current window
+- `RateLimit-Reset`: Time when the current window resets
 
 ## Security Features
 
 - **Helmet:** Security headers for protection against common vulnerabilities
 - **CORS:** Cross-Origin Resource Sharing configuration
+- **Rate Limiting:** IP-based request limiting with multiple tiers:
+  - **General API:** 100 requests per 15 minutes
+  - **Read Operations:** 200 requests per 15 minutes
+  - **Leave Applications:** 10 requests per 1 hour
+  - **Sensitive Operations:** 5 requests per 15 minutes
 - **Input Validation:** Comprehensive validation for all inputs
 - **Error Sanitization:** Prevents information leakage in error responses
 

@@ -7,7 +7,7 @@ export enum LeaveStatus {
 }
 
 export interface ILeave extends Document {
-    employeId: Types.ObjectId,
+    employeId: Schema.Types.ObjectId,
     reason: string,
     startDate: Date,
     endDate: Date,

@@ -13,12 +13,12 @@ import { asyncHandler } from '@/utils/asyncHandler';
  * @param {Response} res - Express response object
  */
 export const applyForLeave = asyncHandler(async (req: Request, res: Response) => {
-    const { employeeId, startDate, endDate } = req.body;
+    const { employeeId, startDate, endDate, reason } = req.body;
 
     // 1. Basic Input Validation
-    if (!employeeId || !startDate || !endDate) {
+    if (!employeeId || !startDate || !endDate ||!reason) {
         res.status(400); // Bad Request
-        throw new Error('All fields (employeeId, startDate, endDate) are required');
+        throw new Error('All fields (employeeId, startDate, endDate, reason) are required');
     }
 
     // 2. Date Conversion and Basic Logic Check
@@ -51,10 +51,17 @@ export const applyForLeave = asyncHandler(async (req: Request, res: Response) =>
 
     // 5. Check for Overlapping Leave Requests for the same employee
     const overlappingLeave = await Leave.findOne({
-        employeeId: employeeId,
+        employeId: employeeId,
         status: { $in: ['Pending', 'Approved'] }, // Check against existing pending or approved leaves
         $or: [
-            { startDate: { $lte: end }, endDate: { $gte: start } }
+            // Case 1: New leave starts during an existing leave
+            { startDate: { $lte: start }, endDate: { $gte: start } },
+            // Case 2: New leave ends during an existing leave  
+            { startDate: { $lte: end }, endDate: { $gte: end } },
+            // Case 3: New leave completely encompasses an existing leave
+            { startDate: { $gte: start }, endDate: { $lte: end } },
+            // Case 4: Existing leave completely encompasses the new leave
+            { startDate: { $lte: start }, endDate: { $gte: end } }
         ]
     });
 
@@ -62,7 +69,7 @@ export const applyForLeave = asyncHandler(async (req: Request, res: Response) =>
         res.status(409); // Conflict
         throw new Error('This leave request overlaps with an existing leave.');
     }
-    
+
     // 6. Check if the employee has enough available leave
     const leaveDuration = (end.getTime() - start.getTime()) / (1000 * 3600 * 24) + 1;
     if (employee.leaveAvailability < leaveDuration) {
@@ -72,9 +79,10 @@ export const applyForLeave = asyncHandler(async (req: Request, res: Response) =>
 
     // --- If all checks pass, create the leave request ---
     const newLeave = await Leave.create({
-        employeeId: employeeId,
+        employeId: employeeId,
         startDate: start,
         endDate: end,
+        reason: reason
     });
 
     res.status(201).json({
@@ -177,7 +185,7 @@ export const getPendingLeaves = asyncHandler(async (req: Request, res: Response)
             .sort({ createdAt: -1 })
             .limit(limit)
             .skip(skip)
-            .populate('employeeId', 'fullName email'), // Populate employee details
+            .populate('employeId', 'fullName email'), // Populate employee details
         Leave.countDocuments(queryFilter)
     ]);
 
@@ -212,7 +220,7 @@ export const getAllLeaves = asyncHandler( async(req: Request, res: Response) => 
 
     // 3. Fetch the data and the total document count in parallel for efficiency
     const [leaves, totalDocuments] = await Promise.all([
-        Leave.find({}).sort({ createdAt: -1 }).limit(limit).skip(skip).populate('employeeId', 'fullName email'),
+        Leave.find({}).sort({ createdAt: -1 }).limit(limit).skip(skip).populate('employeId', 'fullName email'),
         Leave.countDocuments()
     ]);
 

@@ -9,11 +9,15 @@ import leaveRoutes from './routes/leave.routes';
 // Import your custom error handler
 import { errorHandler } from "./middleware/errorHandler.middleware";
 
+// Import rate limiting middleware
+import { generalLimiter } from "./middleware/rateLimiter.middleware";
+
 const app: Application = express();
 
 // --- Core Middleware ---
 app.use(helmet()); // Sets various security HTTP headers
 app.use(cors()); // Enables Cross-Origin Resource Sharing
+app.use(generalLimiter); // Apply general rate limiting to all routes
 app.use(express.json({ limit: '10mb' })); // Parses incoming JSON requests
 app.use(express.urlencoded({ extended: true })); // Parses URL-encoded data
 

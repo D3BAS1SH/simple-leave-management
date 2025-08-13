@@ -2,7 +2,7 @@
   "name": "simple-leave-management",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/server.js",
   "scripts": {
     "build": "tsc",
     "start": "node -r tsconfig-paths/register dist/server.js",

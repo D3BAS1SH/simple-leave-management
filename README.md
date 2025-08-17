@@ -286,6 +286,87 @@ This project is licensed under the ISC License.
 **D3BAS1SH**
 - GitHub: [@D3BAS1SH](https://github.com/D3BAS1SH)
 
+## ER Diagram
+
+![ER Diagram](ER_Diagram.png)
+
+## Business Logic
+
+### Employee Creation
+- **Endpoint**: `POST /api/v1/employees/create`
+- **Required Fields**:
+  - `fullName` (string): Full name of the employee (3-30 characters, letters and spaces only).
+  - `email` (string): Unique email address in a valid format.
+  - `department` (string): Must be one of the predefined `Department` enum values.
+  - `joiningDate` (date): The date the employee joined the company.
+  - `leaveAvailability` (integer, optional): Number of leave days available (default: 40).
+- **Validation**:
+  - Ensures all required fields are provided.
+  - Validates `department` against the `Department` enum.
+  - Throws an error if `leaveAvailability` is less than 1.
+
+### Leave Application
+- **Endpoint**: `POST /api/v1/leaves/apply-leave`
+- **Required Fields**:
+  - `employeeId` (string): The ID of the employee applying for leave.
+  - `startDate` (date): The start date of the leave.
+  - `endDate` (date): The end date of the leave.
+  - `reason` (string): The reason for the leave.
+- **Business Logic**:
+  1. Validate input fields.
+  2. Ensure `startDate` is not after `endDate`.
+  3. Prevent applying for leave in the past.
+  4. Check if the leave dates overlap with existing approved or pending leave requests.
+  5. Verify the employee has sufficient leave balance.
+  6. Reject the request if any validation fails.
+- **Pseudocode**:
+  ```
+  if not all required fields:
+      throw error "All fields are required"
+  if startDate > endDate:
+      throw error "Start date cannot be after end date"
+  if startDate < today:
+      throw error "Cannot apply for leave in the past"
+  if overlapping leave exists:
+      throw error "Leave request overlaps with an existing leave"
+  if leave balance < required days:
+      throw error "Insufficient leave balance"
+  create leave request
+  ```
+
+### HR Leave Requests
+- **Endpoint**: `GET /api/v1/leaves`
+- **Features**:
+  - Pagination: Supports `page` and `limit` query parameters.
+  - Filtering: Allows filtering by `status` (`Pending`, `Approved`, `Rejected`).
+- **Response**:
+  - Paginated list of leave requests with employee details.
+
+### HR Leave Approval/Rejection
+- **Endpoint**: `PATCH /api/v1/leaves/:id`
+- **Required Fields**:
+  - `id` (string): The ID of the leave request.
+  - `status` (string): Must be `Approved` or `Rejected`.
+- **Business Logic**:
+  1. Validate the `status` field.
+  2. Ensure the leave request is in `Pending` status.
+  3. If approving, check the employee's leave balance and deduct the required days.
+  4. Update the leave request with the new status.
+- **Pseudocode**:
+  ```
+  if status not in ["Approved", "Rejected"]:
+      throw error "Invalid status"
+  if leave request not found:
+      throw error "Leave request not found"
+  if leave status != "Pending":
+      throw error "Leave request already processed"
+  if status == "Approved":
+      if leave balance < required days:
+          throw error "Insufficient leave balance"
+      deduct leave days from balance
+  update leave request status
+  ```
+
 ---
 
 For more detailed API documentation, refer to the inline comments in the controller files:

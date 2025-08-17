@@ -298,7 +298,7 @@ This project is licensed under the ISC License.
   - `fullName` (string): Full name of the employee (3-30 characters, letters and spaces only).
   - `email` (string): Unique email address in a valid format.
   - `department` (string): Must be one of the predefined `Department` enum values.
-  - `joiningDate` (date): The date the employee joined the company.
+  - `joiningDate` (date): The date the employee joined the company. **Cannot be in the past.**
   - `leaveAvailability` (integer, optional): Number of leave days available (default: 40).
 - **Validation**:
   - Ensures all required fields are provided.

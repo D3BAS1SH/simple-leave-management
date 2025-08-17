@@ -32,6 +32,9 @@ import { Department } from "@/models/employee.model";
  *                 type: string
  *                 format: date
  *                 description: Joining date of the employee
+ *                 example: "2023-10-10"
+ *                 notes:
+ *                   - "The joiningDate cannot be in the past."
  *               leaveAvailability:
  *                 type: integer
  *                 description: Optional. Leave availability must be undefined or an integer greater than 0
@@ -73,6 +76,10 @@ export const createEmployee = asyncHandler(async(req: Request, res: Response)=>{
     if(!fullName || !email || !department || !joiningDate){
         res.status(400);
         throw new ApiError(400,'fields not available or invalid');
+    }
+
+    if(typeof joiningDate === "string" && (new Date(joiningDate) < new Date())){
+        throw new ApiError(400,"Can't join in past.")
     }
 
     // Validate department against the Department enum

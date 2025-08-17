@@ -1,9 +1,18 @@
 import { Document, Schema, model } from "mongoose";
 
+export enum Department {
+    SDE_I = "SDE-I",
+    SDE_II = "SDE-II",
+    SDE_III = "SDE-III",
+    DESIGNER_UI_UX = "DESIGNER-UI/UX",
+    FRONTEND = "FRONTEND",
+    TESTING = "TESTING",
+    HR = "HR"
+}
 export interface IEmployee extends Document {
     fullName: string;
     email: string;
-    department: string;
+    department: Department;
     joiningDate: Date;
     leaveAvailability: number;
 }
@@ -31,6 +40,7 @@ const EmployeeSchema = new Schema<IEmployee>(
         department: {
             type: String,
             required: [true,"Department is required"],
+            enum: Object.values(Department),
             trim: true
         },
         joiningDate: {

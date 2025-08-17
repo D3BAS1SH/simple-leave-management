@@ -2,6 +2,7 @@ import EmployeeModel from "@/models/employee.model";
 import { ApiError, ApiResponse } from "@/utils/ApiResponse";
 import { asyncHandler } from "@/utils/asyncHandler";
 import { Request, Response } from "express"
+import { Department } from "@/models/employee.model";
 
 /**
  * @swagger
@@ -25,6 +26,7 @@ import { Request, Response } from "express"
  *                 description: Email address of the employee
  *               department:
  *                 type: string
+ *                 enum: [SDE-I, SDE-II, SDE-III, DESIGNER-UI/UX, FRONTEND, TESTING, HR]
  *                 description: Department of the employee
  *               joiningDate:
  *                 type: string
@@ -71,6 +73,12 @@ export const createEmployee = asyncHandler(async(req: Request, res: Response)=>{
     if(!fullName || !email || !department || !joiningDate){
         res.status(400);
         throw new ApiError(400,'fields not available or invalid');
+    }
+
+    // Validate department against the Department enum
+    if (!Object.values(Department).includes(department)) {
+        res.status(400);
+        throw new ApiError(400, `Invalid department. Must be one of: ${Object.values(Department).join(', ')}`);
     }
 
     const employeeExistance = await EmployeeModel.findOne({

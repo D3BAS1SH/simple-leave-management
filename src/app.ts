@@ -9,17 +9,35 @@ import leaveRoutes from './routes/leave.routes';
 // Import your custom error handler
 import { errorHandler } from "./middleware/errorHandler.middleware";
 
-// Import rate limiting middleware
+// Import Swagger setup
+import { setupSwagger } from './utils/swagger';
 import { generalLimiter } from "./middleware/rateLimiter.middleware";
 
 const app: Application = express();
 
 // --- Core Middleware ---
-app.use(helmet()); // Sets various security HTTP headers
-app.use(cors()); // Enables Cross-Origin Resource Sharing
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+            connectSrc: ["'self'", "http://localhost:5011","https://simple-leave-management.onrender.com"],
+            imgSrc: ["'self'", "data:", "blob:"],
+            styleSrc: ["'self'", "'unsafe-inline'"]
+        },
+    },
+})); // Sets various security HTTP headers
+app.use(cors({
+    origin: ['http://localhost:5011',"https://simple-leave-management.onrender.com"], // Allow all origins
+    methods: ['GET', 'POST', 'PATCH', 'DELETE'], // Allow specific HTTP methods
+    allowedHeaders: ['Content-Type', 'Authorization'], // Allow specific headers
+})); // Enables Cross-Origin Resource Sharing
 app.use(generalLimiter); // Apply general rate limiting to all routes
 app.use(express.json({ limit: '10mb' })); // Parses incoming JSON requests
 app.use(express.urlencoded({ extended: true })); // Parses URL-encoded data
+
+// --- Swagger Setup ---
+setupSwagger(app);
 
 // --- Health Check Route ---
 app.get("/", (req: Request, res: Response) => {

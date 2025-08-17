@@ -13,11 +13,11 @@ const startServer = async () => {
 
         // Start listening for incoming requests
         app.listen(PORT, () => {
-            console.log(`🚀 Server is running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+            console.log(`Server is running in ${process.env.NODE_ENV} mode on port ${PORT}`);
         });
 
     } catch (error) {
-        console.error("❌ Failed to start server:", error);
+        console.error("Failed to start server:", error);
         process.exit(1);
     }
 };
